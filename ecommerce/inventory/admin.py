@@ -7,7 +7,7 @@ from .models import (
 @admin.register(Product)
 class ProductAdmin(admin.ModelAdmin):
     list_display = (
-        'pid', 'name', 'slug', 'category', 'seasonal_events', 'description',
+        'name', 'slug', 'category', 'seasonal_events', 'description',
         'is_digtial', 'created_at', 'updated_at', 'is_active', 'stock_status'
     )
     list_filter = ('category', 'seasonal_events', 'is_digtial', 'is_active', 'stock_status')

@@ -1,5 +1,6 @@
 from django.db import models
 from django.utils.translation import gettext_lazy as _
+from django.utils.text import slugify
 import uuid
 class StockStatus(models.TextChoices):
     IN_STOCK = 'In stock', _('In stock')
@@ -7,10 +8,23 @@ class StockStatus(models.TextChoices):
     BACKORDERED = 'Backordered', _('Backordered')
 class Category(models.Model):
     name = models.CharField(max_length=100, unique=True)
-    slug = models.SlugField(unique=True)
+    slug = models.SlugField(unique=True, null=True, blank=True)
     is_active = models.BooleanField(default=False)
-    parent_category = models.ForeignKey('self', null=True, on_delete=models.PROTECT)
-    #se a categoria tem um pai então ela n]ao pode ser excluida
+    parent_category = models.ForeignKey('self', null=True, blank=True, on_delete=models.PROTECT)
+    # se a categoria tem um pai então ela n]ao pode ser excluida
+    class Meta:
+        verbose_name = 'Inventory Category'
+        verbose_name_plural ='Categories'
+    
+    def save(self , *args, **kwargs):
+        if not self.slug:
+            self.slug = slugify(self.name)
+        super().save(*args, **kwargs)
+
+    def __str__(self):
+        return self.name
+
+
 class SeasonalEvents(models.Model):
     id = models.BigAutoField(primary_key=True)
     start_date = models.DateTimeField()
@@ -21,11 +35,10 @@ class ProductType(models.Model):
     name = models.CharField( max_length=100)
     parent = models.ForeignKey("self", on_delete=models.CASCADE)
 class Product(models.Model):
-    pid = models.CharField(max_length=255)
     name = models.CharField(max_length=100, unique=True)
     slug = models.SlugField(unique=True)
-    category = models.ForeignKey(Category, on_delete=models.SET_NULL, null=True) 
-    seasonal_events = models.ForeignKey(SeasonalEvents, on_delete=models.SET_NULL, null=True)
+    category = models.ForeignKey(Category, on_delete=models.SET_NULL, null=True,blank=True) 
+    seasonal_events = models.ForeignKey(SeasonalEvents, on_delete=models.SET_NULL, null=True ,blank=True)
     description = models.TextField(blank=True, null=True)
     is_digtial = models.BooleanField(default=False)
     created_at = models.DateTimeField(auto_now_add=True, editable=False)
@@ -35,6 +48,13 @@ class Product(models.Model):
     #podemos adicionar um dic tbm nas choices
     product_type = models.ManyToManyField(ProductType,through="Product_ProductType", related_name="product_type")
 
+    def save(self , *args, **kwargs):
+        if not self.slug:
+            self.slug = slugify(self.name)
+        super().save(*args, **kwargs)
+
+    def __str__(self):
+        return self.name
 class Attribute(models.Model): #para que a productLine não precise carregar todos os attr de um produto
     name = models.CharField( max_length=100)
     description = models.TextField(null=True)
