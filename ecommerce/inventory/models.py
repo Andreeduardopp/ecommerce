@@ -3,7 +3,7 @@ from django.utils.translation import gettext_lazy as _
 import uuid
 class StockStatus(models.TextChoices):
     IN_STOCK = 'In stock', _('In stock')
-    OUT_OF_STOCK = 'Investimento', _('Investimento')
+    OUT_OF_STOCK = 'Out of stock', _('Out of stock')
     BACKORDERED = 'Backordered', _('Backordered')
 class Category(models.Model):
     name = models.CharField(max_length=100, unique=True)
