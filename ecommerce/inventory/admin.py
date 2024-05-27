@@ -1,82 +1,98 @@
+import nested_admin
 from django.contrib import admin
+
 from .models import (
-    Product, Category, SeasonalEvents, ProductType, Attribute, AttributeValue,
-    ProductLine, productImage, ProductLine_AttributeValue, Product_ProductType, StockControl
+    Attribute,
+    AttributeValue,
+    Category,
+    Product,
+    ProductImage,
+    ProductLine,
+    ProductType,
+    SeasonalEvent,
 )
 
-@admin.register(Product)
-class ProductAdmin(admin.ModelAdmin):
+
+class ProductImageInline(nested_admin.NestedStackedInline):
+    model = ProductImage
+    extra = 1
+
+
+class ProductLineInline(nested_admin.NestedStackedInline):
+    model = ProductLine
+    inlines = [ProductImageInline]
+    extra = 1
+
+
+class ProductAdmin(nested_admin.NestedModelAdmin):
+    inlines = [ProductLineInline]
+
     list_display = (
-        'name', 'slug', 'category', 'seasonal_events', 'description',
-        'is_digtial', 'created_at', 'updated_at', 'is_active', 'stock_status'
+        "name",
+        "category",
+        "stock_status",
+        "is_active",
     )
-    list_filter = ('category', 'seasonal_events', 'is_digtial', 'is_active', 'stock_status')
-    search_fields = ('name', 'slug', 'description')
-    ordering = ('-created_at',)
 
-@admin.register(Category)
-class CategoryAdmin(admin.ModelAdmin):
-    list_display = ('name', 'slug', 'is_active', 'parent_category')
-    list_filter = ('is_active', 'parent_category')
-    search_fields = ('name', 'slug')
-    ordering = ('name',)
+    list_filter = (
+        "category",
+        "stock_status",
+        "is_active",
+    )
 
-@admin.register(SeasonalEvents)
-class SeasonalEventsAdmin(admin.ModelAdmin):
-    list_display = ('name', 'start_date', 'end_date')
-    list_filter = ('start_date', 'end_date')
-    search_fields = ('name',)
-    ordering = ('start_date',)
+    search_fields = ("name",)
 
-@admin.register(ProductType)
-class ProductTypeAdmin(admin.ModelAdmin):
-    list_display = ('name', 'parent')
-    list_filter = ('parent',)
-    search_fields = ('name',)
-    ordering = ('name',)
 
-@admin.register(Attribute)
+admin.site.register(Product, ProductAdmin)
+
+
+class SeasonalEventAdmin(admin.ModelAdmin):
+    list_display = ("name", "start_date", "end_date")
+
+
+admin.site.register(SeasonalEvent, SeasonalEventAdmin)
+
+
+class AttributeValueInline(admin.TabularInline):
+    model = AttributeValue
+    extra = 1
+
+
 class AttributeAdmin(admin.ModelAdmin):
-    list_display = ('name', 'description')
-    search_fields = ('name',)
-    ordering = ('name',)
+    inlines = [AttributeValueInline]
 
-@admin.register(AttributeValue)
-class AttributeValueAdmin(admin.ModelAdmin):
-    list_display = ('attribute_value', 'attribute')
-    list_filter = ('attribute',)
-    search_fields = ('attribute_value',)
-    ordering = ('attribute_value',)
 
-@admin.register(ProductLine)
-class ProductLineAdmin(admin.ModelAdmin):
-    list_display = ('price', 'sku', 'product', 'stock_qty', 'is_active', 'order', 'weight')
-    list_filter = ('product', 'is_active')
-    search_fields = ('sku', 'product__name')
-    ordering = ('order',)
+admin.site.register(Attribute, AttributeAdmin)
 
-@admin.register(productImage)
-class ProductImageAdmin(admin.ModelAdmin):
-    list_display = ('name', 'product_line', 'alternative_text', 'url', 'order')
-    list_filter = ('product_line',)
-    search_fields = ('name', 'alternative_text')
-    ordering = ('order',)
 
-@admin.register(ProductLine_AttributeValue)
-class ProductLine_AttributeValueAdmin(admin.ModelAdmin):
-    list_display = ('attribute_value', 'product_line')
-    list_filter = ('attribute_value', 'product_line')
-    search_fields = ('attribute_value__attribute_value', 'product_line__sku')
+class ChildTypeInline(admin.TabularInline):
+    model = ProductType
+    fk_name = "parent"
+    extra = 1
 
-@admin.register(Product_ProductType)
-class Product_ProductTypeAdmin(admin.ModelAdmin):
-    list_display = ('product', 'product_type')
-    list_filter = ('product', 'product_type')
-    search_fields = ('product__name', 'product_type__name')
 
-@admin.register(StockControl)
-class StockControlAdmin(admin.ModelAdmin):
-    list_display = ('stock_qty', 'name', 'stock_product')
-    list_filter = ('stock_product',)
-    search_fields = ('name', 'stock_product__name')
-    ordering = ('name',)
+class ParentTypeAdmin(admin.ModelAdmin):
+    inlines = [ChildTypeInline]
+
+
+admin.site.register(ProductType, ParentTypeAdmin)
+
+
+class ChildCategoryInline(admin.TabularInline):
+    model = Category
+    fk_name = "parent"
+    extra = 1
+
+
+class ParentCategoryAdmin(admin.ModelAdmin):
+    inlines = [ChildCategoryInline]
+    list_display = (
+        "name",
+        "parent_name",
+    )
+
+    def parent_name(self, obj):
+        return obj.parent.name if obj.parent else None
+
+
+admin.site.register(Category, ParentCategoryAdmin)
